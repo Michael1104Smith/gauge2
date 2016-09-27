@@ -1,0 +1,255 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html  ng-app="sliderDemoApp">
+  	<head>
+    	<meta http-equiv="content-type" content="text/html;charset=utf-8">
+    	<title>Gauge2</title>
+		
+		<link rel="stylesheet" href="css/jquery-ui.css">
+	    <link rel="stylesheet" href="css/slider.css">
+	    <link rel="stylesheet" href="css/style.css">
+		
+		<script type="text/javascript">
+		  var fontSize = 50;
+	      var minorTicks_count = 7, majorTicks_flag = true;
+	      var cur_value = 40, inside_text = "Leading Indicator", min_val = 0, max_val = 100, min_green = 0, max_green = 100;
+		</script>
+		<script type="text/javascript" src="js/d3.v2.js"></script>
+		<script type="text/javascript" src="js/gauge.js"></script>
+		<script type="text/javascript" src="js/gauge_border.js"></script>
+		<script type="text/javascript" src="js/gauge_pointer.js"></script>
+	    <script src="js/jquery-1.10.2.js"></script>
+	    <script src="js/angular.min.js"></script>
+	    <script type="text/javascript" src="js/jquery-ui.min.js"></script>
+	    <script type="text/javascript" src="js/slider.js"></script>  
+	    <script type="text/javascript" src="js/jquery.textchange.min.js"></script>  
+
+	    <script type="text/javascript">
+	    	$(document).ready(function(){
+	       		$('#inside_text').val(inside_text);
+	    		drawChart();
+	    		drawBorder();
+	    		drawPointer();
+		        $('#inside_text').bind('textchange',function(event,previousText){
+		            inside_text = $(this).val();
+		            drawChart();
+		        });
+			    $('#majorCheck').change(function() {
+			        majorTicks_flag = $(this).is(':checked');
+		            drawChart();
+			    });
+		        $('.font_type').on("change",function(){
+		            var font_family = $(this).val();
+		            $('body').css('font-family',font_family);
+		            $('tspan').css('font-family',font_family);
+		        });
+	    	});
+
+			function drawChart()
+			{
+				var config = 
+				{
+					size: 600,
+					label: inside_text,
+					min: min_val,
+					max: max_val,
+					majorTicks: 21
+				}
+								
+				var gauges = new Gauge("chart_div", config);
+				gauges.render();
+			}
+
+			function drawBorder(){
+				var config = 
+				{
+					size: 600,
+					min: 0,
+					max: 100,
+					minorTicks: minorTicks_count
+				}
+				
+				
+				var gauges = new GaugeBorder("border_div1", config);
+				gauges.render();
+			}
+
+			function drawPointer(){
+				var config = 
+				{
+					size: 600,
+					min: min_val,
+					max: max_val,
+					majorTicks: minorTicks_count,
+					valueFontSize: fontSize
+				}
+				
+				
+				var gauges = new GaugePointer("pointer_div", config);
+				gauges.render();
+				gauges.redraw(cur_value);
+			}
+
+	      var app = angular.module('sliderDemoApp', ['ui.slider']);
+
+	      // Currecnt fontSize Function
+          app.factory('a_fontSize', function () {
+            return {
+              refreshfontSize: function (val) {
+                 fontSize = val;
+                 drawPointer();
+              }
+            };
+          });
+
+
+	      // Currecnt minorTicks Function
+	      app.factory('a_minorTicks', function () {
+	        return {
+	          refreshminorTicks: function (val) {
+	             minorTicks_count = val;
+	             drawBorder();
+	          }
+	        };
+	      });
+	      
+	      // Currecnt Value Function
+	      app.factory('a_cur_value', function () {
+	        return {
+	          refreshValue: function (val) {
+	             cur_value = val;
+	             drawChart();
+	    		 drawPointer();
+	          }
+	        };
+	      });
+
+
+	      // Min - Max Function
+	      app.factory('a_min_max', function () {
+	        return {
+	          refreshMinMax: function (val) {
+	          	if(val[1] - val[0] > 21){
+		             min_val = val[0];
+		             max_val = val[1];
+		             drawChart();
+		             drawPointer();
+	          	}
+	          }
+	        };
+	      });
+	      
+	      app.controller('sliderDemoCtrl', function($scope, $log, a_cur_value, a_min_max, a_minorTicks, a_fontSize) {
+
+	        //Refresh minorTicks
+	        function refreshminorTicks (ev, ui) {
+	          a_minorTicks.refreshminorTicks($scope.a_minorTicks.val);
+	        }
+	        
+	        $scope.a_minorTicks =  {
+	          val:minorTicks_count,
+	          options:{
+	            orientation: 'horizontal',
+	            min: 2,
+	            max: 20,
+	            range: 'min',
+	            change: refreshminorTicks,
+	            slide: refreshminorTicks
+	          }
+	        };
+
+	        //Refresh fontSize
+            function refreshfontSize(ev, ui) {
+              a_fontSize.refreshfontSize($scope.a_fontSize.val);
+            }
+            
+            $scope.a_fontSize =  {
+              val:fontSize,
+              options:{
+                orientation: 'horizontal',
+                range: 'min',
+                change: refreshfontSize,
+                slide: refreshfontSize
+              }
+            };
+
+	        //Refresh Value
+	        function refreshValue (ev, ui) {
+	          a_cur_value.refreshValue($scope.a_cur_value.val);
+	        }
+	        
+	        $scope.a_cur_value =  {
+	          val:cur_value,
+	          options:{
+	            orientation: 'horizontal',
+	            range: 'min',
+	            change: refreshValue,
+	            slide: refreshValue
+	          }
+	        };
+
+
+	        //Refresh Min - Max
+	        function refreshMinMax(ev, ui) {
+	          a_min_max.refreshMinMax($scope.a_min_max.val);
+	        }
+
+	        $scope.a_min_max = {
+	          val:[min_val,max_val],
+	          options:{
+	            orientation: 'horizontal',
+	            range: true,
+	            change: refreshMinMax,
+	            slide: refreshMinMax
+	          }
+	        };   
+	      });
+	    </script> 
+
+	</head>
+	
+	<body ng-controller="sliderDemoCtrl">
+	  	<div id="clock_div" style="position:absolute;top:30;left:30px;">
+	  		<div id="border_div1" style="width: 400px; height: 300px;position: absolute;"></div>
+	  		<div id="chart_div" style="width: 400px; height: 300px;position: absolute;"></div>
+	  		<div id="pointer_div" style="width: 400px; height: 300px;position: absolute;"></div>
+	        <div style="position:absolute;top:300px;left:30px;">
+	          <h4>Select Font</h4>
+	          <select class="font_type">
+	              <option class="fontSelect" value="Arial">Arial</option>
+	              <option class="fontSelect" value="Lato">Lato</option>
+	              <option class="fontSelect" value="Montserrat">Montserrat</option>
+	              <option class="fontSelect" value="AbrilFatface">AbrilFatface</option>
+	          </select>
+	        </div>
+	    </div>
+	    <div id="slider_div" style="margin-left: 650px;">
+	      <div class="each_div">
+	        <div class="sliderExample">
+	          <span>ValueFontSize: </span>
+	          <input readonly type="text" ng-model="a_fontSize.val" />  
+	          <div ui-slider="a_fontSize.options" min="40" max="60" ng-model="a_fontSize.val"></div>
+	        </div>
+
+	        <div class="sliderExample">
+	          <span>Min - Max </span>
+	          <div  ui-slider="a_min_max.options" min="0" max="100" step="1" lower-bound="0" upper-bound="100" use-decimals ng-model="a_min_max.val">
+	          </div>
+	          <input readonly type="text" ng-model="a_min_max.val" />
+	        </div>
+
+	        <div class="sliderExample">
+	          <span>minorTicks: </span>
+	          <input readonly type="text" ng-model="a_minorTicks.val" />  
+	          <div ui-slider="a_minorTicks.options" min="5" max="10" ng-model="a_minorTicks.val"></div>
+	        </div>
+
+	        <div class="sliderExample">
+	          <span>Value: </span>
+	          <input readonly type="text" ng-model="a_cur_value.val" />  
+	          <div ui-slider="a_cur_value.options" min="0" max="100" ng-model="a_cur_value.val"></div>
+	        </div>
+	      </div>
+	    </div>
+	</body>
+	
+</html>
